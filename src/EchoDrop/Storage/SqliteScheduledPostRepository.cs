@@ -64,7 +64,11 @@ public sealed class SqliteScheduledPostRepository(IOptions<DatabaseOptions> opti
                         new ScheduledPost(
                             reader.GetInt64(0),
                             reader.GetString(1),
-                            DateTimeOffset.Parse(reader.GetString(2), CultureInfo.InvariantCulture)));
+                            DateTimeOffset.ParseExact(
+                                reader.GetString(2),
+                                "O",
+                                CultureInfo.InvariantCulture,
+                                DateTimeStyles.RoundtripKind)));
                 }
 
                 return duePosts;
