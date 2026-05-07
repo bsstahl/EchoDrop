@@ -29,5 +29,5 @@ builder.Services.AddHostedService<Worker>();
 
 var host = builder.Build();
 
-await host.Services.GetRequiredService<IScheduledPostRepository>().EnsureSchemaAsync(CancellationToken.None);
-await host.RunAsync();
+await host.Services.GetRequiredService<IScheduledPostRepository>().EnsureSchemaAsync(CancellationToken.None).ConfigureAwait(false);
+await host.RunAsync().ConfigureAwait(false);
