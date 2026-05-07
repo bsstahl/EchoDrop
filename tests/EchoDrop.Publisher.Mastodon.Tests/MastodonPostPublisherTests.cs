@@ -54,6 +54,21 @@ public sealed class MastodonPostPublisherTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => sut.PublishAsync("Hello world", CancellationToken.None));
     }
 
+    [Fact]
+    public async Task PublishAsync_ThrowsWhenMastodonReturnsError()
+    {
+        var handler = new StubHttpMessageHandler((_, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.BadRequest)));
+        using var httpClient = new HttpClient(handler)
+        {
+            BaseAddress = new Uri("https://example.social/")
+        };
+
+        var sut = new MastodonPostPublisher(httpClient, Options.Create(new MastodonOptions { AccessToken = "token" }));
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => sut.PublishAsync("Hello world", CancellationToken.None));
+    }
+
     private sealed class StubHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> responder)
         : HttpMessageHandler
     {
