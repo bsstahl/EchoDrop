@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("EchoDrop")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0ce3f97fdfcc8a646a6435b767da113d8a6d070b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f8aa27abad7e2f459036f667a27df7ca91e4f860")]
 [assembly: System.Reflection.AssemblyProductAttribute("EchoDrop")]
 [assembly: System.Reflection.AssemblyTitleAttribute("EchoDrop")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

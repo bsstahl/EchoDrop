@@ -43,6 +43,27 @@ public sealed class ScheduledPostPublisherTests
         Assert.Empty(repository.MarkedPostIds);
     }
 
+    [Fact]
+    public async Task PublishDuePostsAsync_ContinuesWhenOnePublishFails()
+    {
+        var now = new DateTimeOffset(2026, 01, 01, 12, 00, 00, TimeSpan.Zero);
+        var duePosts = new List<ScheduledPost>
+        {
+            new(1, "Fail", now.AddMinutes(-5)),
+            new(2, "Pass", now.AddMinutes(-1))
+        };
+
+        var repository = new FakeRepository(duePosts);
+        var provider = new FakeProvider(content => content == "Fail" ? throw new InvalidOperationException("boom") : "provider-id");
+        var publisher = new ScheduledPostPublisher(repository, provider, NullLogger<ScheduledPostPublisher>.Instance);
+
+        var published = await publisher.PublishDuePostsAsync(now, CancellationToken.None);
+
+        Assert.Equal(1, published);
+        Assert.Equal(["Fail", "Pass"], provider.PublishedContents);
+        Assert.Equal([2L], repository.MarkedPostIds);
+    }
+
     private sealed class FakeRepository(IReadOnlyList<ScheduledPost> duePosts) : IScheduledPostRepository
     {
         private readonly IReadOnlyList<ScheduledPost> _duePosts = duePosts;
@@ -61,14 +82,16 @@ public sealed class ScheduledPostPublisherTests
         }
     }
 
-    private sealed class FakeProvider : IMastodonProvider
+    private sealed class FakeProvider(Func<string, string?>? resultFactory = null) : IMastodonProvider
     {
+        private readonly Func<string, string?> _resultFactory = resultFactory ?? (_ => "provider-id");
+
         public List<string> PublishedContents { get; } = [];
 
         public Task<string?> PublishAsync(string content, CancellationToken cancellationToken)
         {
             PublishedContents.Add(content);
-            return Task.FromResult<string?>("provider-id");
+            return Task.FromResult(_resultFactory(content));
         }
     }
 }

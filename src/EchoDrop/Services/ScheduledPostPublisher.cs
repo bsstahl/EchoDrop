@@ -19,11 +19,18 @@ public sealed class ScheduledPostPublisher(
 
         foreach (var post in duePosts)
         {
-            var providerPostId = await _mastodonProvider.PublishAsync(post.Content, cancellationToken).ConfigureAwait(false);
-            await _scheduledPostRepository.MarkAsPublishedAsync(post.Id, providerPostId, nowUtc, cancellationToken).ConfigureAwait(false);
-            publishedCount++;
+            try
+            {
+                var providerPostId = await _mastodonProvider.PublishAsync(post.Content, cancellationToken).ConfigureAwait(false);
+                await _scheduledPostRepository.MarkAsPublishedAsync(post.Id, providerPostId, nowUtc, cancellationToken).ConfigureAwait(false);
+                publishedCount++;
 
-            _logger.LogInformation("Published scheduled post {PostId} as Mastodon status {ProviderPostId}.", post.Id, providerPostId ?? "<none>");
+                _logger.LogInformation("Published scheduled post {PostId} as Mastodon status {ProviderPostId}.", post.Id, providerPostId ?? "<none>");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to publish scheduled post {PostId}.", post.Id);
+            }
         }
 
         return publishedCount;
