@@ -21,7 +21,7 @@ builder.Services.AddHttpClient<IMastodonPostPublisher, MastodonPostPublisher>((s
         .GetSection(MastodonOptions.SectionName)
         .Get<MastodonOptions>() ?? new MastodonOptions();
 
-    client.BaseAddress = new Uri(options.BaseUrl, UriKind.Absolute);
+    client.BaseAddress = options.BaseUrl;
 });
 builder.Services.AddTransient<IPostPublisher, MastodonPostPublisherAdapter>();
 

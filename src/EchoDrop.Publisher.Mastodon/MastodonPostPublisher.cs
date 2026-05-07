@@ -28,7 +28,7 @@ public sealed class MastodonPostPublisher(HttpClient httpClient, IOptions<Mastod
         using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
 
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
         using var payload = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         return payload.RootElement.TryGetProperty("id", out var id) ? id.GetString() : null;

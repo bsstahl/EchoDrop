@@ -4,7 +4,7 @@ public sealed class MastodonOptions
 {
     public const string SectionName = "Mastodon";
 
-    public string BaseUrl { get; set; } = "https://mastodon.social";
+    public Uri BaseUrl { get; set; } = new("https://mastodon.social", UriKind.Absolute);
 
     public string AccessToken { get; set; } = string.Empty;
 }
