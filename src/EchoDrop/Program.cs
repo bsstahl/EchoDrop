@@ -15,7 +15,7 @@ builder.Services.Configure<MastodonOptions>(builder.Configuration.GetSection(Mas
 
 builder.Services.AddSingleton<IScheduledPostRepository, SqliteScheduledPostRepository>();
 builder.Services.AddSingleton<ScheduledPostPublisher>();
-builder.Services.AddHttpClient<MastodonPostPublisher>((serviceProvider, client) =>
+builder.Services.AddHttpClient<IMastodonPostPublisher, MastodonPostPublisher>((serviceProvider, client) =>
 {
     var options = serviceProvider.GetRequiredService<IConfiguration>()
         .GetSection(MastodonOptions.SectionName)

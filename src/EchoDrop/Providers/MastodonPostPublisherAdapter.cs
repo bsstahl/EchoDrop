@@ -3,9 +3,9 @@ using EchoDrop.Publisher.Mastodon;
 
 namespace EchoDrop.Providers;
 
-public sealed class MastodonPostPublisherAdapter(MastodonPostPublisher mastodonPostPublisher) : IPostPublisher
+public sealed class MastodonPostPublisherAdapter(IMastodonPostPublisher mastodonPostPublisher) : IPostPublisher
 {
-    private readonly MastodonPostPublisher _mastodonPostPublisher = mastodonPostPublisher;
+    private readonly IMastodonPostPublisher _mastodonPostPublisher = mastodonPostPublisher;
 
     public Task<string?> PublishAsync(string content, CancellationToken cancellationToken)
         => _mastodonPostPublisher.PublishAsync(content, cancellationToken);

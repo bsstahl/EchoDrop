@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 
 namespace EchoDrop.Publisher.Mastodon;
 
-public sealed class MastodonPostPublisher(HttpClient httpClient, IOptions<MastodonOptions> options)
+public sealed class MastodonPostPublisher(HttpClient httpClient, IOptions<MastodonOptions> options) : IMastodonPostPublisher
 {
     private readonly HttpClient _httpClient = httpClient;
     private readonly MastodonOptions _options = options.Value;
