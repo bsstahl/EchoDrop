@@ -1,4 +1,4 @@
-namespace EchoDrop.Configuration;
+namespace EchoDrop.Publisher.Mastodon.Configuration;
 
 public sealed class MastodonOptions
 {

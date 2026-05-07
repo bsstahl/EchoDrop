@@ -1,5 +1,5 @@
 using EchoDrop.Models;
-using EchoDrop.Providers;
+using EchoDrop.Publishing;
 using EchoDrop.Services;
 using EchoDrop.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -82,7 +82,7 @@ public sealed class ScheduledPostPublisherTests
         }
     }
 
-    private sealed class FakeProvider(Func<string, string?>? resultFactory = null) : IMastodonProvider
+    private sealed class FakeProvider(Func<string, string?>? resultFactory = null) : IPostPublisher
     {
         private readonly Func<string, string?> _resultFactory = resultFactory ?? (_ => "provider-id");
 

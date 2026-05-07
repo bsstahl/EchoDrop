@@ -1,11 +1,11 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
-using EchoDrop.Configuration;
+using EchoDrop.Publisher.Mastodon.Configuration;
 using Microsoft.Extensions.Options;
 
-namespace EchoDrop.Providers;
+namespace EchoDrop.Publisher.Mastodon;
 
-public sealed class MastodonProvider(HttpClient httpClient, IOptions<MastodonOptions> options) : IMastodonProvider
+public sealed class MastodonPostPublisher(HttpClient httpClient, IOptions<MastodonOptions> options)
 {
     private readonly HttpClient _httpClient = httpClient;
     private readonly MastodonOptions _options = options.Value;

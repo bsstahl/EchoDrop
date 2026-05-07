@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/EchoDrop.Publisher.Mastodon/EchoDrop.Publisher.Mastodon.csproj" />
     <Project Path="src/EchoDrop/EchoDrop.csproj" />
   </Folder>
   <Folder Name="/tests/">

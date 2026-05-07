@@ -1,6 +1,6 @@
-namespace EchoDrop.Providers;
+namespace EchoDrop.Publishing;
 
-public interface IMastodonProvider
+public interface IPostPublisher
 {
     Task<string?> PublishAsync(string content, CancellationToken cancellationToken);
 }
