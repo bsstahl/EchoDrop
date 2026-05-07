@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\EchoDrop.Domain\EchoDrop.Domain.csproj" />
     <ProjectReference Include="..\EchoDrop.Publisher.Mastodon\EchoDrop.Publisher.Mastodon.csproj" />
   </ItemGroup>
 </Project>

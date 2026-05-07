@@ -1,4 +1,4 @@
-using EchoDrop.Models;
+using EchoDrop.Domain.Models;
 
 namespace EchoDrop.Storage;
 

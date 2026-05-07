@@ -1,4 +1,4 @@
-namespace EchoDrop.Publishing;
+namespace EchoDrop.Domain.Publishing;
 
 public interface IPostPublisher
 {

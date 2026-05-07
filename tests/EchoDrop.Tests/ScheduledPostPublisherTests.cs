@@ -1,5 +1,5 @@
-using EchoDrop.Models;
-using EchoDrop.Publishing;
+using EchoDrop.Domain.Models;
+using EchoDrop.Domain.Publishing;
 using EchoDrop.Services;
 using EchoDrop.Storage;
 using Microsoft.Extensions.Logging.Abstractions;

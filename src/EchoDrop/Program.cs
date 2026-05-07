@@ -1,9 +1,8 @@
 using EchoDrop;
 using EchoDrop.Configuration;
-using EchoDrop.Providers;
+using EchoDrop.Domain.Publishing;
 using EchoDrop.Publisher.Mastodon;
 using EchoDrop.Publisher.Mastodon.Configuration;
-using EchoDrop.Publishing;
 using EchoDrop.Services;
 using EchoDrop.Storage;
 
@@ -15,7 +14,7 @@ builder.Services.Configure<MastodonOptions>(builder.Configuration.GetSection(Mas
 
 builder.Services.AddSingleton<IScheduledPostRepository, SqliteScheduledPostRepository>();
 builder.Services.AddSingleton<ScheduledPostPublisher>();
-builder.Services.AddHttpClient<IMastodonPostPublisher, MastodonPostPublisher>((serviceProvider, client) =>
+builder.Services.AddHttpClient<IPostPublisher, MastodonPostPublisher>((serviceProvider, client) =>
 {
     var options = serviceProvider.GetRequiredService<IConfiguration>()
         .GetSection(MastodonOptions.SectionName)
@@ -23,7 +22,6 @@ builder.Services.AddHttpClient<IMastodonPostPublisher, MastodonPostPublisher>((s
 
     client.BaseAddress = options.BaseUrl;
 });
-builder.Services.AddTransient<IPostPublisher, MastodonPostPublisherAdapter>();
 
 builder.Services.AddHostedService<Worker>();
 
