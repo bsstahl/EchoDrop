@@ -28,11 +28,11 @@ public sealed class MastodonPostPublisher(HttpClient httpClient, IOptions<Mastod
         using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
 
-        var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-        await using (stream.ConfigureAwait(false))
-        {
-            using var payload = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
-            return payload.RootElement.TryGetProperty("id", out var id) ? id.GetString() : null;
-        }
+#pragma warning disable CA2007
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+#pragma warning restore CA2007
+        using var payload = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        return payload.RootElement.TryGetProperty("id", out var id) ? id.GetString() : null;
     }
 }
