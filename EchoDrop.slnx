@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/EchoDrop/EchoDrop.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/EchoDrop.Tests/EchoDrop.Tests.csproj" />
+  </Folder>
+</Solution>
