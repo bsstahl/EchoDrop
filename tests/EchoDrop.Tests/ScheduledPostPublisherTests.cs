@@ -11,10 +11,12 @@ public sealed class ScheduledPostPublisherTests
     public async Task PublishDuePostsAsync_PublishesAndMarksEachDuePost()
     {
         var now = new DateTimeOffset(2026, 01, 01, 12, 00, 00, TimeSpan.Zero);
+        var firstId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var secondId = Guid.Parse("22222222-2222-2222-2222-222222222222");
         var duePosts = new List<ScheduledPost>
         {
-            new(1, "First", now.AddMinutes(-10)),
-            new(2, "Second", now.AddMinutes(-1))
+            new(firstId, "First", now.AddMinutes(-10)),
+            new(secondId, "Second", now.AddMinutes(-1))
         };
 
         var repository = new FakeRepository(duePosts);
@@ -25,7 +27,7 @@ public sealed class ScheduledPostPublisherTests
 
         Assert.Equal(2, published);
         Assert.Equal(["First", "Second"], provider.PublishedContents);
-        Assert.Equal([1L, 2L], repository.MarkedPostIds);
+        Assert.Equal([firstId, secondId], repository.MarkedPostIds);
     }
 
     [Fact]
@@ -46,10 +48,12 @@ public sealed class ScheduledPostPublisherTests
     public async Task PublishDuePostsAsync_ContinuesWhenOnePublishFails()
     {
         var now = new DateTimeOffset(2026, 01, 01, 12, 00, 00, TimeSpan.Zero);
+        var failedId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        var passedId = Guid.Parse("44444444-4444-4444-4444-444444444444");
         var duePosts = new List<ScheduledPost>
         {
-            new(1, "Fail", now.AddMinutes(-5)),
-            new(2, "Pass", now.AddMinutes(-1))
+            new(failedId, "Fail", now.AddMinutes(-5)),
+            new(passedId, "Pass", now.AddMinutes(-1))
         };
 
         var repository = new FakeRepository(duePosts);
@@ -60,21 +64,21 @@ public sealed class ScheduledPostPublisherTests
 
         Assert.Equal(1, published);
         Assert.Equal(["Fail", "Pass"], provider.PublishedContents);
-        Assert.Equal([2L], repository.MarkedPostIds);
+        Assert.Equal([passedId], repository.MarkedPostIds);
     }
 
     private sealed class FakeRepository(IReadOnlyList<ScheduledPost> duePosts) : IScheduledPostRepository
     {
         private readonly IReadOnlyList<ScheduledPost> _duePosts = duePosts;
 
-        public List<long> MarkedPostIds { get; } = [];
+        public List<Guid> MarkedPostIds { get; } = [];
 
         public Task EnsureSchemaAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
         public Task<IReadOnlyList<ScheduledPost>> GetDuePostsAsync(DateTimeOffset asOfUtc, CancellationToken cancellationToken)
             => Task.FromResult(_duePosts);
 
-        public Task MarkAsPublishedAsync(long postId, string? providerPostId, DateTimeOffset publishedAtUtc, CancellationToken cancellationToken)
+        public Task MarkAsPublishedAsync(Guid postId, string? providerPostId, DateTimeOffset publishedAtUtc, CancellationToken cancellationToken)
         {
             MarkedPostIds.Add(postId);
             return Task.CompletedTask;

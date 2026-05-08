@@ -1,3 +1,3 @@
 namespace EchoDrop.Domain.Models;
 
-public sealed record ScheduledPost(long Id, string Content, DateTimeOffset ScheduledAtUtc);
+public sealed record ScheduledPost(Guid Id, string Content, DateTimeOffset ScheduledAtUtc);

@@ -15,7 +15,8 @@ public sealed class WorkerEngineTests
     public async Task ExecuteAsync_UsesMinimumPollIntervalAndPublishesDuePosts()
     {
         var now = new DateTimeOffset(2026, 01, 01, 12, 00, 00, TimeSpan.Zero);
-        var repository = new FakeRepository([[new ScheduledPost(1, "Hello", now.AddMinutes(-5))]]);
+        var postId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var repository = new FakeRepository([[new ScheduledPost(postId, "Hello", now.AddMinutes(-5))]]);
         var provider = new FakeProvider();
         var publisher = new ScheduledPostPublisher(repository, provider, NullLogger<ScheduledPostPublisher>.Instance);
         var timerFactory = new FakeTimerFactory([false]);
@@ -31,7 +32,7 @@ public sealed class WorkerEngineTests
 
         Assert.Equal(TimeSpan.FromSeconds(1), timerFactory.CreatedPeriod);
         Assert.Equal([now], repository.AsOfCalls);
-        Assert.Equal([1L], repository.MarkedPostIds);
+        Assert.Equal([postId], repository.MarkedPostIds);
         Assert.Equal(["Hello"], provider.PublishedContents);
         Assert.Contains(logger.Messages, message => message.Contains("Published 1 scheduled post(s).", StringComparison.Ordinal));
     }
@@ -97,7 +98,7 @@ public sealed class WorkerEngineTests
         private readonly Queue<IReadOnlyList<ScheduledPost>> _duePostsByCall = new(duePostsByCall);
 
         public List<DateTimeOffset> AsOfCalls { get; } = [];
-        public List<long> MarkedPostIds { get; } = [];
+        public List<Guid> MarkedPostIds { get; } = [];
 
         public Task EnsureSchemaAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
@@ -108,7 +109,7 @@ public sealed class WorkerEngineTests
             return Task.FromResult(duePosts);
         }
 
-        public Task MarkAsPublishedAsync(long postId, string? providerPostId, DateTimeOffset publishedAtUtc, CancellationToken cancellationToken)
+        public Task MarkAsPublishedAsync(Guid postId, string? providerPostId, DateTimeOffset publishedAtUtc, CancellationToken cancellationToken)
         {
             MarkedPostIds.Add(postId);
             return Task.CompletedTask;

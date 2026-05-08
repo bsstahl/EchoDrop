@@ -20,6 +20,7 @@ public sealed class SqliteScheduledPostRepositoryTests
 
         Assert.Equal("ScheduledPosts", await GetSqliteMasterNameAsync(connection, "table", "ScheduledPosts"));
         Assert.Equal("IX_ScheduledPosts_Due", await GetSqliteMasterNameAsync(connection, "index", "IX_ScheduledPosts_Due"));
+        Assert.Equal("TEXT", await GetColumnTypeAsync(connection, "ScheduledPosts", "Id"));
     }
 
     [Fact]
@@ -30,10 +31,12 @@ public sealed class SqliteScheduledPostRepositoryTests
         await sut.EnsureSchemaAsync(CancellationToken.None);
 
         var asOfUtc = new DateTimeOffset(2026, 01, 15, 12, 0, 0, TimeSpan.Zero);
-        await SeedPostAsync(db, 10, "first due", new DateTimeOffset(2026, 01, 15, 10, 0, 0, TimeSpan.Zero), null, null);
-        await SeedPostAsync(db, 11, "second due", new DateTimeOffset(2026, 01, 15, 10, 0, 0, TimeSpan.Zero), null, null);
-        await SeedPostAsync(db, 12, "future", new DateTimeOffset(2026, 01, 15, 13, 0, 0, TimeSpan.Zero), null, null);
-        await SeedPostAsync(db, 13, "already published", new DateTimeOffset(2026, 01, 15, 9, 0, 0, TimeSpan.Zero), asOfUtc, "provider-id");
+        var firstDueId = Guid.Parse("10000000-0000-0000-0000-000000000001");
+        var secondDueId = Guid.Parse("10000000-0000-0000-0000-000000000002");
+        await SeedPostAsync(db, firstDueId, "first due", new DateTimeOffset(2026, 01, 15, 10, 0, 0, TimeSpan.Zero), null, null);
+        await SeedPostAsync(db, secondDueId, "second due", new DateTimeOffset(2026, 01, 15, 10, 0, 0, TimeSpan.Zero), null, null);
+        await SeedPostAsync(db, Guid.Parse("10000000-0000-0000-0000-000000000003"), "future", new DateTimeOffset(2026, 01, 15, 13, 0, 0, TimeSpan.Zero), null, null);
+        await SeedPostAsync(db, Guid.Parse("10000000-0000-0000-0000-000000000004"), "already published", new DateTimeOffset(2026, 01, 15, 9, 0, 0, TimeSpan.Zero), asOfUtc, "provider-id");
 
         var result = await sut.GetDuePostsAsync(asOfUtc, CancellationToken.None);
 
@@ -41,13 +44,13 @@ public sealed class SqliteScheduledPostRepositoryTests
             result,
             post =>
             {
-                Assert.Equal(10, post.Id);
+                Assert.Equal(firstDueId, post.Id);
                 Assert.Equal("first due", post.Content);
                 Assert.Equal(new DateTimeOffset(2026, 01, 15, 10, 0, 0, TimeSpan.Zero), post.ScheduledAtUtc);
             },
             post =>
             {
-                Assert.Equal(11, post.Id);
+                Assert.Equal(secondDueId, post.Id);
                 Assert.Equal("second due", post.Content);
                 Assert.Equal(new DateTimeOffset(2026, 01, 15, 10, 0, 0, TimeSpan.Zero), post.ScheduledAtUtc);
             });
@@ -59,15 +62,17 @@ public sealed class SqliteScheduledPostRepositoryTests
         using var db = new TemporaryDatabase();
         var sut = db.CreateRepository();
         await sut.EnsureSchemaAsync(CancellationToken.None);
-        await SeedPostAsync(db, 1, "to publish", new DateTimeOffset(2026, 01, 15, 9, 0, 0, TimeSpan.Zero), null, null);
+        var postId = Guid.Parse("20000000-0000-0000-0000-000000000001");
+        await SeedPostAsync(db, postId, "to publish", new DateTimeOffset(2026, 01, 15, 9, 0, 0, TimeSpan.Zero), null, null);
 
         var publishedAtUtc = new DateTimeOffset(2026, 01, 15, 12, 30, 0, TimeSpan.Zero);
-        await sut.MarkAsPublishedAsync(1, "provider-123", publishedAtUtc, CancellationToken.None);
+        await sut.MarkAsPublishedAsync(postId, "provider-123", publishedAtUtc, CancellationToken.None);
 
         await using var connection = db.OpenConnection();
         await connection.OpenAsync();
         await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT PublishedAtUtc, ProviderPostId FROM ScheduledPosts WHERE Id = 1;";
+        command.CommandText = "SELECT PublishedAtUtc, ProviderPostId FROM ScheduledPosts WHERE Id = $id;";
+        command.Parameters.AddWithValue("$id", postId.ToString("D", CultureInfo.InvariantCulture));
         await using var reader = await command.ExecuteReaderAsync();
         Assert.True(await reader.ReadAsync());
         Assert.Equal(publishedAtUtc.UtcDateTime.ToString("O", CultureInfo.InvariantCulture), reader.GetString(0));
@@ -80,14 +85,16 @@ public sealed class SqliteScheduledPostRepositoryTests
         using var db = new TemporaryDatabase();
         var sut = db.CreateRepository();
         await sut.EnsureSchemaAsync(CancellationToken.None);
-        await SeedPostAsync(db, 2, "to publish", new DateTimeOffset(2026, 01, 15, 9, 0, 0, TimeSpan.Zero), null, null);
+        var postId = Guid.Parse("20000000-0000-0000-0000-000000000002");
+        await SeedPostAsync(db, postId, "to publish", new DateTimeOffset(2026, 01, 15, 9, 0, 0, TimeSpan.Zero), null, null);
 
-        await sut.MarkAsPublishedAsync(2, null, new DateTimeOffset(2026, 01, 15, 12, 30, 0, TimeSpan.Zero), CancellationToken.None);
+        await sut.MarkAsPublishedAsync(postId, null, new DateTimeOffset(2026, 01, 15, 12, 30, 0, TimeSpan.Zero), CancellationToken.None);
 
         await using var connection = db.OpenConnection();
         await connection.OpenAsync();
         await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT ProviderPostId FROM ScheduledPosts WHERE Id = 2;";
+        command.CommandText = "SELECT ProviderPostId FROM ScheduledPosts WHERE Id = $id;";
+        command.Parameters.AddWithValue("$id", postId.ToString("D", CultureInfo.InvariantCulture));
         await using var reader = await command.ExecuteReaderAsync();
         Assert.True(await reader.ReadAsync());
         Assert.True(reader.IsDBNull(0));
@@ -104,7 +111,7 @@ public sealed class SqliteScheduledPostRepositoryTests
 
     private static async Task SeedPostAsync(
         TemporaryDatabase db,
-        long id,
+        Guid id,
         string content,
         DateTimeOffset scheduledAtUtc,
         DateTimeOffset? publishedAtUtc,
@@ -118,7 +125,7 @@ public sealed class SqliteScheduledPostRepositoryTests
             INSERT INTO ScheduledPosts (Id, Content, ScheduledAtUtc, PublishedAtUtc, ProviderPostId)
             VALUES ($id, $content, $scheduledAtUtc, $publishedAtUtc, $providerPostId);
             """;
-        command.Parameters.AddWithValue("$id", id);
+        command.Parameters.AddWithValue("$id", id.ToString("D", CultureInfo.InvariantCulture));
         command.Parameters.AddWithValue("$content", content);
         command.Parameters.AddWithValue("$scheduledAtUtc", scheduledAtUtc.UtcDateTime.ToString("O", CultureInfo.InvariantCulture));
         command.Parameters.AddWithValue("$publishedAtUtc", publishedAtUtc?.UtcDateTime.ToString("O", CultureInfo.InvariantCulture) ?? (object)DBNull.Value);
@@ -139,6 +146,23 @@ public sealed class SqliteScheduledPostRepositoryTests
         command.Parameters.AddWithValue("$type", type);
         command.Parameters.AddWithValue("$name", name);
         return await command.ExecuteScalarAsync() as string;
+    }
+
+    private static async Task<string?> GetColumnTypeAsync(SqliteConnection connection, string tableName, string columnName)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = $"PRAGMA table_info({tableName});";
+
+        await using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            if (string.Equals(reader.GetString(1), columnName, StringComparison.Ordinal))
+            {
+                return reader.GetString(2);
+            }
+        }
+
+        return null;
     }
 
     private sealed class TemporaryDatabase : IDisposable
