@@ -20,6 +20,7 @@ public sealed class SqliteScheduledPostRepository(IOptions<DatabaseOptions> opti
             command.CommandText =
                 """
                 CREATE TABLE IF NOT EXISTS ScheduledPosts (
+                    -- Client supplies GUID Id values for idempotent scheduling.
                     Id TEXT PRIMARY KEY,
                     Content TEXT NOT NULL,
                     ScheduledAtUtc TEXT NOT NULL,
