@@ -64,7 +64,7 @@ public sealed class SqliteScheduledPostRepository(IOptions<DatabaseOptions> opti
             {
                 foreach (var post in posts)
                 {
-                    var command = connection.CreateCommand();
+                    using var command = connection.CreateCommand();
                     command.Transaction = transaction;
                     command.CommandText =
                         """
