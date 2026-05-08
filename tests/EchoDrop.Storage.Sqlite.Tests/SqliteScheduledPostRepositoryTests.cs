@@ -144,15 +144,26 @@ public sealed class SqliteScheduledPostRepositoryTests
     private sealed class TemporaryDatabase : IDisposable
     {
         private readonly string _databasePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.db");
+        private readonly string _connectionString;
+
+        public TemporaryDatabase()
+        {
+            _connectionString = new SqliteConnectionStringBuilder
+            {
+                DataSource = _databasePath,
+                Pooling = false
+            }.ToString();
+        }
 
         public SqliteScheduledPostRepository CreateRepository()
-            => new(Options.Create(new DatabaseOptions { ConnectionString = $"Data Source={_databasePath}" }));
+            => new(Options.Create(new DatabaseOptions { ConnectionString = _connectionString }));
 
         public SqliteConnection OpenConnection()
-            => new($"Data Source={_databasePath}");
+            => new(_connectionString);
 
         public void Dispose()
         {
+            SqliteConnection.ClearAllPools();
             if (File.Exists(_databasePath))
             {
                 File.Delete(_databasePath);
