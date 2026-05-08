@@ -1,6 +1,6 @@
 using EchoDrop.Domain.Models;
 
-namespace EchoDrop.Storage;
+namespace EchoDrop.Domain.Storage;
 
 public interface IScheduledPostRepository
 {

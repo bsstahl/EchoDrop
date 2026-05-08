@@ -12,7 +12,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.5" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
   </ItemGroup>
@@ -20,5 +19,6 @@
   <ItemGroup>
     <ProjectReference Include="..\EchoDrop.Domain\EchoDrop.Domain.csproj" />
     <ProjectReference Include="..\EchoDrop.Publisher.Mastodon\EchoDrop.Publisher.Mastodon.csproj" />
+    <ProjectReference Include="..\EchoDrop.Storage.Sqlite\EchoDrop.Storage.Sqlite.csproj" />
   </ItemGroup>
 </Project>

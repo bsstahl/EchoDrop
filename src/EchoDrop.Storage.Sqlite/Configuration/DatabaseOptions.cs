@@ -1,4 +1,4 @@
-namespace EchoDrop.Configuration;
+namespace EchoDrop.Storage.Sqlite.Configuration;
 
 public sealed class DatabaseOptions
 {

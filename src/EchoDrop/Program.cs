@@ -1,10 +1,12 @@
 using EchoDrop;
 using EchoDrop.Configuration;
 using EchoDrop.Domain.Publishing;
+using EchoDrop.Domain.Storage;
 using EchoDrop.Publisher.Mastodon;
 using EchoDrop.Publisher.Mastodon.Configuration;
 using EchoDrop.Services;
-using EchoDrop.Storage;
+using EchoDrop.Storage.Sqlite;
+using EchoDrop.Storage.Sqlite.Configuration;
 
 var builder = Host.CreateApplicationBuilder(args);
 

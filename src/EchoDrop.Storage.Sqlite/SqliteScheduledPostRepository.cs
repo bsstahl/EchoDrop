@@ -1,10 +1,11 @@
-using EchoDrop.Configuration;
 using EchoDrop.Domain.Models;
+using EchoDrop.Domain.Storage;
+using EchoDrop.Storage.Sqlite.Configuration;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 using System.Globalization;
 
-namespace EchoDrop.Storage;
+namespace EchoDrop.Storage.Sqlite;
 
 public sealed class SqliteScheduledPostRepository(IOptions<DatabaseOptions> options) : IScheduledPostRepository
 {

@@ -1,7 +1,7 @@
 using EchoDrop.Domain.Models;
 using EchoDrop.Domain.Publishing;
+using EchoDrop.Domain.Storage;
 using EchoDrop.Services;
-using EchoDrop.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EchoDrop.Tests;

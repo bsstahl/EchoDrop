@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/EchoDrop.Domain/EchoDrop.Domain.csproj" />
     <Project Path="src/EchoDrop.Publisher.Mastodon/EchoDrop.Publisher.Mastodon.csproj" />
+    <Project Path="src/EchoDrop.Storage.Sqlite/EchoDrop.Storage.Sqlite.csproj" />
     <Project Path="src/EchoDrop/EchoDrop.csproj" />
   </Folder>
   <Folder Name="/tests/">
