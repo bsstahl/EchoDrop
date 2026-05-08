@@ -1,7 +1,6 @@
 using EchoDrop;
 using EchoDrop.Configuration;
-using EchoDrop.Domain.Publishing;
-using EchoDrop.Domain.Storage;
+using EchoDrop.Domain.Interfaces;
 using EchoDrop.Publisher.Mastodon;
 using EchoDrop.Publisher.Mastodon.Configuration;
 using EchoDrop.Services;

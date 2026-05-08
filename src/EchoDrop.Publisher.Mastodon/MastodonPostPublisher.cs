@@ -1,6 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
-using EchoDrop.Domain.Publishing;
+using EchoDrop.Domain.Interfaces;
 using EchoDrop.Publisher.Mastodon.Configuration;
 using Microsoft.Extensions.Options;
 

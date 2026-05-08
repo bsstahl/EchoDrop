@@ -1,5 +1,5 @@
 using EchoDrop.Domain.Models;
-using EchoDrop.Domain.Storage;
+using EchoDrop.Domain.Interfaces;
 using EchoDrop.Storage.Sqlite.Configuration;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;

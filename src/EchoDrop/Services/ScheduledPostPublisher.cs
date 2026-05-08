@@ -1,5 +1,4 @@
-using EchoDrop.Domain.Publishing;
-using EchoDrop.Domain.Storage;
+using EchoDrop.Domain.Interfaces;
 
 namespace EchoDrop.Services;
 
