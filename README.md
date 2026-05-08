@@ -17,7 +17,7 @@ The service creates the `ScheduledPosts` table automatically at startup.
 
 Required columns used for scheduling/publishing:
 
-- `Id` (INTEGER PRIMARY KEY)
+- `Id` (TEXT PRIMARY KEY, GUID supplied by client for idempotence)
 - `Content` (TEXT NOT NULL)
 - `ScheduledAtUtc` (TEXT, ISO-8601 UTC timestamp)
 - `PublishedAtUtc` (TEXT NULL)

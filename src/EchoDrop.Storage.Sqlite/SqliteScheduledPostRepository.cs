@@ -20,7 +20,8 @@ public sealed class SqliteScheduledPostRepository(IOptions<DatabaseOptions> opti
             command.CommandText =
                 """
                 CREATE TABLE IF NOT EXISTS ScheduledPosts (
-                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    -- Client supplies GUID Id values for idempotent scheduling.
+                    Id TEXT PRIMARY KEY,
                     Content TEXT NOT NULL,
                     ScheduledAtUtc TEXT NOT NULL,
                     PublishedAtUtc TEXT NULL,
@@ -63,7 +64,7 @@ public sealed class SqliteScheduledPostRepository(IOptions<DatabaseOptions> opti
                 {
                     duePosts.Add(
                         new ScheduledPost(
-                            reader.GetInt64(0),
+                            Guid.Parse(reader.GetString(0)),
                             reader.GetString(1),
                             DateTimeOffset.ParseExact(
                                 reader.GetString(2),
@@ -85,7 +86,7 @@ public sealed class SqliteScheduledPostRepository(IOptions<DatabaseOptions> opti
         }
     }
 
-    public async Task MarkAsPublishedAsync(long postId, string? providerPostId, DateTimeOffset publishedAtUtc, CancellationToken cancellationToken)
+    public async Task MarkAsPublishedAsync(Guid postId, string? providerPostId, DateTimeOffset publishedAtUtc, CancellationToken cancellationToken)
     {
         var connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -100,7 +101,7 @@ public sealed class SqliteScheduledPostRepository(IOptions<DatabaseOptions> opti
                 """;
             command.Parameters.AddWithValue("$publishedAtUtc", publishedAtUtc.UtcDateTime.ToString("O", CultureInfo.InvariantCulture));
             command.Parameters.AddWithValue("$providerPostId", providerPostId ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("$postId", postId);
+            command.Parameters.AddWithValue("$postId", postId.ToString("D", CultureInfo.InvariantCulture));
 
             await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
