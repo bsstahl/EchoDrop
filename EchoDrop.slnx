@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/EchoDrop.Domain/EchoDrop.Domain.csproj" />
+    <Project Path="src/EchoDrop.Publisher.Mastodon/EchoDrop.Publisher.Mastodon.csproj" />
+    <Project Path="src/EchoDrop.Storage.Sqlite/EchoDrop.Storage.Sqlite.csproj" />
+    <Project Path="src/EchoDrop/EchoDrop.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/EchoDrop.Storage.Sqlite.Tests/EchoDrop.Storage.Sqlite.Tests.csproj" />
+    <Project Path="tests/EchoDrop.Publisher.Mastodon.Tests/EchoDrop.Publisher.Mastodon.Tests.csproj" />
+    <Project Path="tests/EchoDrop.Tests/EchoDrop.Tests.csproj" />
+  </Folder>
+</Solution>
