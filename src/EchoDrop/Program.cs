@@ -5,7 +5,7 @@ var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services
     .ConfigureEchoDropOptions(builder.Configuration)
-    .AddEchoDropServices(builder.Configuration);
+    .AddEchoDropServices();
 
 var host = builder.Build();
 

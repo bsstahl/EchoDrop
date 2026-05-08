@@ -5,6 +5,7 @@ using EchoDrop.Publisher.Mastodon.Configuration;
 using EchoDrop.Services;
 using EchoDrop.Storage.Sqlite;
 using EchoDrop.Storage.Sqlite.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace EchoDrop;
 
@@ -22,21 +23,18 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddEchoDropServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddEchoDropServices(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
-        ArgumentNullException.ThrowIfNull(configuration);
 
         services.AddSingleton<IScheduledPostRepository, SqliteScheduledPostRepository>();
         services.AddSingleton<ScheduledPostPublisher>();
         services.AddSingleton<TimeProvider>(TimeProvider.System);
         services.AddSingleton<IPeriodicTimerFactory, PeriodicTimerFactory>();
         services.AddSingleton<IWorkerEngine, WorkerEngine>();
-        services.AddHttpClient<IPostPublisher, MastodonPostPublisher>((_, client) =>
+        services.AddHttpClient<IPostPublisher, MastodonPostPublisher>((serviceProvider, client) =>
         {
-            var options = configuration
-                .GetSection(MastodonOptions.SectionName)
-                .Get<MastodonOptions>() ?? new MastodonOptions();
+            var options = serviceProvider.GetRequiredService<IOptions<MastodonOptions>>().Value;
 
             client.BaseAddress = options.BaseUrl;
         });

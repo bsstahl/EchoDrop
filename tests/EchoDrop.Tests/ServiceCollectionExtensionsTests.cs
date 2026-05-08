@@ -63,7 +63,7 @@ public sealed class ServiceCollectionExtensionsTests
         services.AddLogging();
         services.ConfigureEchoDropOptions(configuration);
 
-        services.AddEchoDropServices(configuration);
+        services.AddEchoDropServices();
 
         using var provider = services.BuildServiceProvider();
         Assert.IsType<SqliteScheduledPostRepository>(provider.GetRequiredService<IScheduledPostRepository>());
@@ -85,11 +85,7 @@ public sealed class ServiceCollectionExtensionsTests
     [Fact]
     public void AddEchoDropServices_ThrowsWhenArgumentsAreNull()
     {
-        var services = new ServiceCollection();
-        var configuration = BuildConfiguration();
-
-        Assert.Throws<ArgumentNullException>(() => ServiceCollectionExtensions.AddEchoDropServices(null!, configuration));
-        Assert.Throws<ArgumentNullException>(() => services.AddEchoDropServices(null!));
+        Assert.Throws<ArgumentNullException>(() => ServiceCollectionExtensions.AddEchoDropServices(null!));
     }
 
     private static IConfiguration BuildConfiguration(IDictionary<string, string?>? entries = null)
