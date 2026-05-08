@@ -8,8 +8,8 @@ using EchoDrop.Storage.Sqlite.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
-using System.Reflection;
 
 namespace EchoDrop.Tests;
 
@@ -75,10 +75,15 @@ public sealed class ServiceCollectionExtensionsTests
         Assert.Contains(hostedServices, hostedService => hostedService is Worker);
 
         var publisher = provider.GetRequiredService<IPostPublisher>();
-        var mastodonPublisher = Assert.IsType<MastodonPostPublisher>(publisher);
-        var httpClientField = typeof(MastodonPostPublisher).GetField("_httpClient", BindingFlags.NonPublic | BindingFlags.Instance);
-        Assert.NotNull(httpClientField);
-        var httpClient = Assert.IsType<HttpClient>(httpClientField.GetValue(mastodonPublisher));
+        Assert.IsType<MastodonPostPublisher>(publisher);
+
+        var clientOptions = GetConfiguredClientOptions(provider.GetRequiredService<IOptionsMonitor<HttpClientFactoryOptions>>());
+        using var httpClient = new HttpClient();
+        foreach (var action in clientOptions.HttpClientActions)
+        {
+            action(httpClient);
+        }
+
         Assert.Equal(new Uri("https://mastodon.example"), httpClient.BaseAddress);
     }
 
@@ -92,4 +97,31 @@ public sealed class ServiceCollectionExtensionsTests
         => new ConfigurationBuilder()
             .AddInMemoryCollection(entries ?? new Dictionary<string, string?>())
             .Build();
+
+    private static HttpClientFactoryOptions GetConfiguredClientOptions(IOptionsMonitor<HttpClientFactoryOptions> optionsMonitor)
+    {
+        var clientNames = new[]
+        {
+            typeof(IPostPublisher).FullName,
+            typeof(IPostPublisher).Name,
+            typeof(MastodonPostPublisher).FullName,
+            typeof(MastodonPostPublisher).Name
+        };
+
+        foreach (var clientName in clientNames)
+        {
+            if (string.IsNullOrWhiteSpace(clientName))
+            {
+                continue;
+            }
+
+            var options = optionsMonitor.Get(clientName);
+            if (options.HttpClientActions.Count > 0)
+            {
+                return options;
+            }
+        }
+
+        throw new InvalidOperationException("No configured HttpClientFactoryOptions were found for Mastodon publisher registration.");
+    }
 }
