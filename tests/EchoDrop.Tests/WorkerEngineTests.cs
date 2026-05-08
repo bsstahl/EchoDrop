@@ -102,6 +102,10 @@ public sealed class WorkerEngineTests
 
         public Task EnsureSchemaAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
+        public Task UpsertAsync(ScheduledPost post, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task UpsertAsync(IReadOnlyList<ScheduledPost> posts, CancellationToken cancellationToken) => Task.CompletedTask;
+
         public Task<IReadOnlyList<ScheduledPost>> GetDuePostsAsync(DateTimeOffset asOfUtc, CancellationToken cancellationToken)
         {
             AsOfCalls.Add(asOfUtc);

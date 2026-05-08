@@ -2,6 +2,15 @@
 
 EchoDrop is a .NET 10 worker service that polls a local SQLite database for due scheduled posts and publishes them to Mastodon.
 
+## Data update API
+
+EchoDrop exposes a REST API for idempotent scheduling updates:
+
+- `PUT /api/posts/{id}` with JSON body `{ "content": "...", "scheduledAtUtc": "2026-01-15T12:00:00Z" }`
+- `PUT /api/posts` with a JSON array of `{ "id": "...", "content": "...", "scheduledAtUtc": "..." }`
+
+Both endpoints upsert by post id for later publication.
+
 ## Configuration
 
 `src/EchoDrop/appsettings.json`:

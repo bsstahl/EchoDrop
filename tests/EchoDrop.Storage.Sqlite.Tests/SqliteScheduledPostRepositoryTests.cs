@@ -1,4 +1,5 @@
 using System.Globalization;
+using EchoDrop.Domain.Models;
 using EchoDrop.Storage.Sqlite.Configuration;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
@@ -54,6 +55,64 @@ public sealed class SqliteScheduledPostRepositoryTests
                 Assert.Equal("second due", post.Content);
                 Assert.Equal(new DateTimeOffset(2026, 01, 15, 10, 0, 0, TimeSpan.Zero), post.ScheduledAtUtc);
             });
+    }
+
+    [Fact]
+    public async Task UpsertAsync_WithSinglePost_InsertsScheduledPost()
+    {
+        using var db = new TemporaryDatabase();
+        var sut = db.CreateRepository();
+        await sut.EnsureSchemaAsync(CancellationToken.None);
+        var postId = Guid.Parse("15000000-0000-0000-0000-000000000001");
+        var scheduledAtUtc = new DateTimeOffset(2026, 01, 15, 10, 0, 0, TimeSpan.Zero);
+
+        await sut.UpsertAsync(new ScheduledPost(postId, "single", scheduledAtUtc), CancellationToken.None);
+
+        await using var connection = db.OpenConnection();
+        await connection.OpenAsync();
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT Content, ScheduledAtUtc, PublishedAtUtc, ProviderPostId FROM ScheduledPosts WHERE Id = $id;";
+        command.Parameters.AddWithValue("$id", postId.ToString("D", CultureInfo.InvariantCulture));
+        await using var reader = await command.ExecuteReaderAsync();
+        Assert.True(await reader.ReadAsync());
+        Assert.Equal("single", reader.GetString(0));
+        Assert.Equal(scheduledAtUtc.UtcDateTime.ToString("O", CultureInfo.InvariantCulture), reader.GetString(1));
+        Assert.True(reader.IsDBNull(2));
+        Assert.True(reader.IsDBNull(3));
+    }
+
+    [Fact]
+    public async Task UpsertAsync_WithMultiplePosts_UpdatesExistingPost()
+    {
+        using var db = new TemporaryDatabase();
+        var sut = db.CreateRepository();
+        await sut.EnsureSchemaAsync(CancellationToken.None);
+        var existingId = Guid.Parse("16000000-0000-0000-0000-000000000001");
+        await SeedPostAsync(
+            db,
+            existingId,
+            "before",
+            new DateTimeOffset(2026, 01, 15, 9, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2026, 01, 15, 10, 0, 0, TimeSpan.Zero),
+            "provider");
+
+        await sut.UpsertAsync(
+            [
+                new(existingId, "after", new DateTimeOffset(2026, 01, 15, 11, 0, 0, TimeSpan.Zero)),
+                new(Guid.Parse("16000000-0000-0000-0000-000000000002"), "new", new DateTimeOffset(2026, 01, 15, 12, 0, 0, TimeSpan.Zero))
+            ],
+            CancellationToken.None);
+
+        await using var connection = db.OpenConnection();
+        await connection.OpenAsync();
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT Content, PublishedAtUtc, ProviderPostId FROM ScheduledPosts WHERE Id = $id;";
+        command.Parameters.AddWithValue("$id", existingId.ToString("D", CultureInfo.InvariantCulture));
+        await using var reader = await command.ExecuteReaderAsync();
+        Assert.True(await reader.ReadAsync());
+        Assert.Equal("after", reader.GetString(0));
+        Assert.Equal("provider", reader.GetString(2));
+        Assert.False(reader.IsDBNull(1));
     }
 
     [Fact]
