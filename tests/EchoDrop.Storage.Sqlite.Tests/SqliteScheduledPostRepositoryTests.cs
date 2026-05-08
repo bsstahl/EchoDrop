@@ -20,7 +20,7 @@ public sealed class SqliteScheduledPostRepositoryTests
 
         Assert.Equal("ScheduledPosts", await GetSqliteMasterNameAsync(connection, "table", "ScheduledPosts"));
         Assert.Equal("IX_ScheduledPosts_Due", await GetSqliteMasterNameAsync(connection, "index", "IX_ScheduledPosts_Due"));
-        Assert.Equal("TEXT", await GetColumnTypeAsync(connection, "ScheduledPosts", "Id"));
+        Assert.Equal("TEXT", await GetColumnTypeAsync(connection, "Id"));
     }
 
     [Fact]
@@ -148,10 +148,10 @@ public sealed class SqliteScheduledPostRepositoryTests
         return await command.ExecuteScalarAsync() as string;
     }
 
-    private static async Task<string?> GetColumnTypeAsync(SqliteConnection connection, string tableName, string columnName)
+    private static async Task<string?> GetColumnTypeAsync(SqliteConnection connection, string columnName)
     {
         await using var command = connection.CreateCommand();
-        command.CommandText = $"PRAGMA table_info({tableName});";
+        command.CommandText = "PRAGMA table_info(ScheduledPosts);";
 
         await using var reader = await command.ExecuteReaderAsync();
         while (await reader.ReadAsync())
