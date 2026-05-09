@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using EchoDrop.Configuration;
 using EchoDrop.Domain.Interfaces;
 using EchoDrop.Domain.Models;
@@ -9,6 +10,7 @@ using System.Reflection;
 
 namespace EchoDrop.Tests;
 
+[ExcludeFromCodeCoverage]
 public sealed class WorkerEngineTests
 {
     [Fact]

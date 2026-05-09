@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using EchoDrop.Domain.Models;
 using EchoDrop.Domain.Interfaces;
 using EchoDrop.Services;
@@ -5,6 +6,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EchoDrop.Tests;
 
+[ExcludeFromCodeCoverage]
 public sealed class ScheduledPostPublisherTests
 {
     [Fact]

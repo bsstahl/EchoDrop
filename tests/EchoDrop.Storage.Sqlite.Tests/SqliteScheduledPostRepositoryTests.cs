@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Diagnostics.CodeAnalysis;
 using EchoDrop.Domain.Models;
 using EchoDrop.Storage.Sqlite.Configuration;
 using Microsoft.Data.Sqlite;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Options;
 
 namespace EchoDrop.Storage.Sqlite.Tests;
 
+[ExcludeFromCodeCoverage]
 public sealed class SqliteScheduledPostRepositoryTests
 {
     [Fact]

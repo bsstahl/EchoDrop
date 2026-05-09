@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Diagnostics.CodeAnalysis;
 using EchoDrop.Domain.Interfaces;
 using EchoDrop.Domain.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace EchoDrop.Tests;
 
+[ExcludeFromCodeCoverage]
 public sealed class DataUpdateApiTests
 {
     [Fact]

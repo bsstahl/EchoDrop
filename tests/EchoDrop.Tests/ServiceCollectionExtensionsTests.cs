@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using EchoDrop.Configuration;
 using EchoDrop.Domain.Interfaces;
 using EchoDrop.Publisher.Mastodon;
@@ -13,6 +14,7 @@ using Microsoft.Extensions.Options;
 
 namespace EchoDrop.Tests;
 
+[ExcludeFromCodeCoverage]
 public sealed class ServiceCollectionExtensionsTests
 {
     [Fact]

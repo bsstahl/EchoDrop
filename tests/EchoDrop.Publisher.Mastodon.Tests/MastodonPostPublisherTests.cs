@@ -1,12 +1,14 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Diagnostics.CodeAnalysis;
 using EchoDrop.Publisher.Mastodon;
 using EchoDrop.Publisher.Mastodon.Configuration;
 using Microsoft.Extensions.Options;
 
 namespace EchoDrop.Publisher.Mastodon.Tests;
 
+[ExcludeFromCodeCoverage]
 public sealed class MastodonPostPublisherTests
 {
     [Fact]
