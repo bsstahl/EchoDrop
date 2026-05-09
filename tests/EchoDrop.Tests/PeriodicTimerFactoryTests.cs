@@ -20,7 +20,7 @@ public sealed class PeriodicTimerFactoryTests
     }
 
     [Fact]
-    public async Task DisposeAsync_DisposedTimerStopsTicking()
+    public async Task DisposeAsync_PreventsFurtherTicks()
     {
         var factory = new PeriodicTimerFactory();
         var timer = factory.Create(TimeSpan.FromMilliseconds(10));
