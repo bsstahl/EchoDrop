@@ -89,6 +89,9 @@ public sealed class ScheduledPostPublisherTests
             MarkedPostIds.Add(postId);
             return Task.CompletedTask;
         }
+
+        public Task<CancelScheduledPostResult> CancelScheduledPostAsync(Guid postId, DateTimeOffset latestCancelableAtUtc, CancellationToken cancellationToken)
+            => Task.FromResult(CancelScheduledPostResult.NotFound);
     }
 
     private sealed class FakeProvider(Func<string, string?>? resultFactory = null) : IPostPublisher

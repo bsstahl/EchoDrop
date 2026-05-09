@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Diagnostics.CodeAnalysis;
+using EchoDrop.Domain.Interfaces;
 using EchoDrop.Domain.Models;
 using EchoDrop.Storage.Sqlite.Configuration;
 using Microsoft.Data.Sqlite;
@@ -159,6 +160,74 @@ public sealed class SqliteScheduledPostRepositoryTests
         await using var reader = await command.ExecuteReaderAsync();
         Assert.True(await reader.ReadAsync());
         Assert.True(reader.IsDBNull(0));
+    }
+
+    [Fact]
+    public async Task CancelScheduledPostAsync_UnpublishedAndBeforeCutoff_DeletesPost()
+    {
+        using var db = new TemporaryDatabase();
+        var sut = db.CreateRepository();
+        await sut.EnsureSchemaAsync(CancellationToken.None);
+        var postId = Guid.Parse("30000000-0000-0000-0000-000000000001");
+        var scheduledAtUtc = new DateTimeOffset(2026, 01, 15, 12, 0, 0, TimeSpan.Zero);
+        await SeedPostAsync(db, postId, "to cancel", scheduledAtUtc, null, null);
+
+        var result = await sut.CancelScheduledPostAsync(postId, scheduledAtUtc.AddSeconds(-11), CancellationToken.None);
+
+        Assert.Equal(CancelScheduledPostResult.Canceled, result);
+        await using var connection = db.OpenConnection();
+        await connection.OpenAsync();
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT COUNT(*) FROM ScheduledPosts WHERE Id = $id;";
+        command.Parameters.AddWithValue("$id", postId.ToString("D", CultureInfo.InvariantCulture));
+        Assert.Equal(0L, (long)(await command.ExecuteScalarAsync() ?? 0L));
+    }
+
+    [Fact]
+    public async Task CancelScheduledPostAsync_ReturnsAlreadyPublishedWhenPostWasPublished()
+    {
+        using var db = new TemporaryDatabase();
+        var sut = db.CreateRepository();
+        await sut.EnsureSchemaAsync(CancellationToken.None);
+        var postId = Guid.Parse("30000000-0000-0000-0000-000000000002");
+        await SeedPostAsync(
+            db,
+            postId,
+            "published",
+            new DateTimeOffset(2026, 01, 15, 12, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2026, 01, 15, 12, 1, 0, TimeSpan.Zero),
+            "provider-id");
+
+        var result = await sut.CancelScheduledPostAsync(postId, new DateTimeOffset(2026, 01, 15, 11, 59, 45, TimeSpan.Zero), CancellationToken.None);
+
+        Assert.Equal(CancelScheduledPostResult.AlreadyPublished, result);
+    }
+
+    [Fact]
+    public async Task CancelScheduledPostAsync_ReturnsTooCloseToPublishWhenAtOrInsideCutoff()
+    {
+        using var db = new TemporaryDatabase();
+        var sut = db.CreateRepository();
+        await sut.EnsureSchemaAsync(CancellationToken.None);
+        var postId = Guid.Parse("30000000-0000-0000-0000-000000000003");
+        var scheduledAtUtc = new DateTimeOffset(2026, 01, 15, 12, 0, 0, TimeSpan.Zero);
+        await SeedPostAsync(db, postId, "too close", scheduledAtUtc, null, null);
+
+        var result = await sut.CancelScheduledPostAsync(postId, scheduledAtUtc, CancellationToken.None);
+
+        Assert.Equal(CancelScheduledPostResult.TooCloseToPublish, result);
+    }
+
+    [Fact]
+    public async Task CancelScheduledPostAsync_ReturnsNotFoundWhenPostDoesNotExist()
+    {
+        using var db = new TemporaryDatabase();
+        var sut = db.CreateRepository();
+        await sut.EnsureSchemaAsync(CancellationToken.None);
+
+        var result = await sut.CancelScheduledPostAsync(Guid.Parse("30000000-0000-0000-0000-000000000004"), new DateTimeOffset(2026, 01, 15, 11, 59, 45, TimeSpan.Zero), CancellationToken.None);
+
+        Assert.Equal(CancelScheduledPostResult.NotFound, result);
     }
 
     [Fact]

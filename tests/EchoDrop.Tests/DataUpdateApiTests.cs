@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Diagnostics.CodeAnalysis;
+using EchoDrop.Configuration;
 using EchoDrop.Domain.Interfaces;
 using EchoDrop.Domain.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
 namespace EchoDrop.Tests;
 
@@ -161,7 +163,74 @@ public sealed class DataUpdateApiTests
         Assert.Empty(repository.BulkUpserts);
     }
 
-    private static WebApplicationFactory<Program> CreateFactory(RecordingRepository repository)
+    [Fact]
+    public async Task DeletePost_Cancelled_ReturnsNoContent()
+    {
+        var repository = new RecordingRepository
+        {
+            CancelResult = CancelScheduledPostResult.Canceled
+        };
+        var now = new DateTimeOffset(2026, 01, 01, 12, 00, 00, TimeSpan.Zero);
+        using var factory = CreateFactory(repository, now, cancelLeadTimeSeconds: 15);
+        using var client = factory.CreateClient();
+        var postId = Guid.Parse("55555555-5555-5555-5555-555555555555");
+
+        var response = await client.DeleteAsync($"/api/posts/{postId:D}");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Equal(postId, repository.CancelPostId);
+        Assert.Equal(now.AddSeconds(15), repository.CancelLatestCancelableAtUtc);
+    }
+
+    [Fact]
+    public async Task DeletePost_AlreadyPublished_ReturnsConflict()
+    {
+        var repository = new RecordingRepository
+        {
+            CancelResult = CancelScheduledPostResult.AlreadyPublished
+        };
+        using var factory = CreateFactory(repository);
+        using var client = factory.CreateClient();
+
+        var response = await client.DeleteAsync("/api/posts/66666666-6666-6666-6666-666666666666");
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeletePost_TooCloseToPublish_ReturnsConflict()
+    {
+        var repository = new RecordingRepository
+        {
+            CancelResult = CancelScheduledPostResult.TooCloseToPublish
+        };
+        using var factory = CreateFactory(repository);
+        using var client = factory.CreateClient();
+
+        var response = await client.DeleteAsync("/api/posts/77777777-7777-7777-7777-777777777777");
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeletePost_NotFound_ReturnsNotFound()
+    {
+        var repository = new RecordingRepository
+        {
+            CancelResult = CancelScheduledPostResult.NotFound
+        };
+        using var factory = CreateFactory(repository);
+        using var client = factory.CreateClient();
+
+        var response = await client.DeleteAsync("/api/posts/88888888-8888-8888-8888-888888888888");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    private static WebApplicationFactory<Program> CreateFactory(
+        RecordingRepository repository,
+        DateTimeOffset? now = null,
+        int cancelLeadTimeSeconds = 10)
         => new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
@@ -169,7 +238,11 @@ public sealed class DataUpdateApiTests
                 {
                     services.RemoveAll<IHostedService>();
                     services.RemoveAll<IScheduledPostRepository>();
+                    services.RemoveAll<TimeProvider>();
+                    services.RemoveAll<IOptions<WorkerOptions>>();
                     services.AddSingleton<IScheduledPostRepository>(repository);
+                    services.AddSingleton<TimeProvider>(new FixedTimeProvider(now ?? new DateTimeOffset(2026, 01, 01, 00, 00, 00, TimeSpan.Zero)));
+                    services.AddSingleton<IOptions<WorkerOptions>>(Options.Create(new WorkerOptions { CancelLeadTimeSeconds = cancelLeadTimeSeconds }));
                 });
             });
 
@@ -178,6 +251,12 @@ public sealed class DataUpdateApiTests
         public ScheduledPost? SingleUpsert { get; private set; }
 
         public IReadOnlyList<ScheduledPost> BulkUpserts { get; private set; } = [];
+
+        public CancelScheduledPostResult CancelResult { get; init; } = CancelScheduledPostResult.Canceled;
+
+        public Guid? CancelPostId { get; private set; }
+
+        public DateTimeOffset? CancelLatestCancelableAtUtc { get; private set; }
 
         public Task EnsureSchemaAsync(CancellationToken cancellationToken)
             => Task.CompletedTask;
@@ -199,5 +278,19 @@ public sealed class DataUpdateApiTests
 
         public Task MarkAsPublishedAsync(Guid postId, string? providerPostId, DateTimeOffset publishedAtUtc, CancellationToken cancellationToken)
             => Task.CompletedTask;
+
+        public Task<CancelScheduledPostResult> CancelScheduledPostAsync(Guid postId, DateTimeOffset latestCancelableAtUtc, CancellationToken cancellationToken)
+        {
+            CancelPostId = postId;
+            CancelLatestCancelableAtUtc = latestCancelableAtUtc;
+            return Task.FromResult(CancelResult);
+        }
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
+    {
+        private readonly DateTimeOffset _now = now;
+
+        public override DateTimeOffset GetUtcNow() => _now;
     }
 }
