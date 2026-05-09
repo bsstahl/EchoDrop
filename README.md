@@ -8,8 +8,10 @@ EchoDrop exposes a REST API for idempotent scheduling updates:
 
 - `PUT /api/posts/{id}` with JSON body `{ "content": "...", "scheduledAtUtc": "2026-01-15T12:00:00Z" }`
 - `PUT /api/posts` with a JSON array of `{ "id": "...", "content": "...", "scheduledAtUtc": "..." }`
+- `DELETE /api/posts/{id}` to cancel a scheduled post before publication
 
-Both endpoints upsert by post id for later publication.
+PUT endpoints upsert by post id for later publication.
+DELETE returns `409 Conflict` if the post has already been published, or if it is within the cancellation lead-time window before `scheduledAtUtc`.
 
 ## Configuration
 
@@ -17,6 +19,7 @@ Both endpoints upsert by post id for later publication.
 
 - `Database:ConnectionString` - SQLite connection string (default `Data Source=echodrop.db`)
 - `Worker:PollIntervalSeconds` - polling interval for due posts
+- `Worker:CancelLeadTimeSeconds` - minimum seconds before scheduled publication required for cancellation (default `10`)
 - `Mastodon:BaseUrl` - Mastodon instance base URL
 - `Mastodon:AccessToken` - Mastodon API access token
 

@@ -120,6 +120,9 @@ public sealed class WorkerEngineTests
             MarkedPostIds.Add(postId);
             return Task.CompletedTask;
         }
+
+        public Task<CancelScheduledPostResult> CancelScheduledPostAsync(Guid postId, DateTimeOffset latestCancelableAtUtc, CancellationToken cancellationToken)
+            => Task.FromResult(CancelScheduledPostResult.NotFound);
     }
 
     private sealed class FakeProvider : IPostPublisher

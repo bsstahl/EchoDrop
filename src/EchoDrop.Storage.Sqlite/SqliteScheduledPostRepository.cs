@@ -165,6 +165,78 @@ public sealed class SqliteScheduledPostRepository(IOptions<DatabaseOptions> opti
         }
     }
 
+    public async Task<CancelScheduledPostResult> CancelScheduledPostAsync(Guid postId, DateTimeOffset latestCancelableAtUtc, CancellationToken cancellationToken)
+    {
+        var connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var transaction = (SqliteTransaction)await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                var selectCommand = connection.CreateCommand();
+                selectCommand.Transaction = transaction;
+                selectCommand.CommandText =
+                    """
+                    SELECT ScheduledAtUtc, PublishedAtUtc
+                    FROM ScheduledPosts
+                    WHERE Id = $postId;
+                    """;
+                selectCommand.Parameters.AddWithValue("$postId", postId.ToString("D", CultureInfo.InvariantCulture));
+
+                var reader = await selectCommand.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+                    {
+                        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+                        return CancelScheduledPostResult.NotFound;
+                    }
+
+                    if (!await reader.IsDBNullAsync(1, cancellationToken).ConfigureAwait(false))
+                    {
+                        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+                        return CancelScheduledPostResult.AlreadyPublished;
+                    }
+
+                    if (DateTimeOffset.ParseExact(
+                        reader.GetString(0),
+                        "O",
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.RoundtripKind) <= latestCancelableAtUtc)
+                    {
+                        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+                        return CancelScheduledPostResult.TooCloseToPublish;
+                    }
+                }
+                finally
+                {
+                    await reader.DisposeAsync().ConfigureAwait(false);
+                }
+
+                var deleteCommand = connection.CreateCommand();
+                deleteCommand.Transaction = transaction;
+                deleteCommand.CommandText =
+                    """
+                    DELETE FROM ScheduledPosts
+                    WHERE Id = $postId;
+                    """;
+                deleteCommand.Parameters.AddWithValue("$postId", postId.ToString("D", CultureInfo.InvariantCulture));
+
+                var deletedRows = await deleteCommand.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+                await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+                return deletedRows > 0 ? CancelScheduledPostResult.Canceled : CancelScheduledPostResult.NotFound;
+            }
+            finally
+            {
+                await transaction.DisposeAsync().ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            await connection.DisposeAsync().ConfigureAwait(false);
+        }
+    }
+
     private async Task<SqliteConnection> OpenConnectionAsync(CancellationToken cancellationToken)
     {
         var connection = new SqliteConnection(_connectionString);

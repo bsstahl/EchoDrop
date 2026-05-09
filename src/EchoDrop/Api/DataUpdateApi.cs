@@ -1,5 +1,7 @@
 using EchoDrop.Domain.Interfaces;
 using EchoDrop.Domain.Models;
+using EchoDrop.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace EchoDrop.Api;
 
@@ -11,6 +13,7 @@ public static class DataUpdateApi
 
         endpoints.MapPut("/api/posts/{id:guid}", UpsertSinglePostAsync);
         endpoints.MapPut("/api/posts", UpsertPostsAsync);
+        endpoints.MapDelete("/api/posts/{id:guid}", CancelPostAsync);
 
         return endpoints;
     }
@@ -57,6 +60,27 @@ public static class DataUpdateApi
 
         await repository.UpsertAsync(posts, cancellationToken).ConfigureAwait(false);
         return Results.NoContent();
+    }
+
+    private static async Task<IResult> CancelPostAsync(
+        Guid id,
+        IScheduledPostRepository repository,
+        IOptions<WorkerOptions> options,
+        TimeProvider timeProvider,
+        CancellationToken cancellationToken)
+    {
+        var cancelLeadTime = TimeSpan.FromSeconds(Math.Max(0, options.Value.CancelLeadTimeSeconds));
+        var latestCancelableAtUtc = timeProvider.GetUtcNow().Add(cancelLeadTime);
+        var result = await repository.CancelScheduledPostAsync(id, latestCancelableAtUtc, cancellationToken).ConfigureAwait(false);
+
+        return result switch
+        {
+            CancelScheduledPostResult.Canceled => Results.NoContent(),
+            CancelScheduledPostResult.NotFound => Results.NotFound(),
+            CancelScheduledPostResult.AlreadyPublished => Results.Conflict("Post has already been published."),
+            CancelScheduledPostResult.TooCloseToPublish => Results.Conflict("Post is too close to scheduled publication time to cancel."),
+            _ => Results.StatusCode(StatusCodes.Status500InternalServerError)
+        };
     }
 
 }

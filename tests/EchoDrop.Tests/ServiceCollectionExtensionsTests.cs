@@ -24,6 +24,7 @@ public sealed class ServiceCollectionExtensionsTests
         {
             [$"{DatabaseOptions.SectionName}:ConnectionString"] = "Data Source=config.db",
             [$"{WorkerOptions.SectionName}:PollIntervalSeconds"] = "9",
+            [$"{WorkerOptions.SectionName}:CancelLeadTimeSeconds"] = "14",
             [$"{MastodonOptions.SectionName}:BaseUrl"] = "https://example.social",
             [$"{MastodonOptions.SectionName}:AccessToken"] = "token-123"
         });
@@ -39,6 +40,7 @@ public sealed class ServiceCollectionExtensionsTests
 
         Assert.Equal("Data Source=config.db", databaseOptions.ConnectionString);
         Assert.Equal(9, workerOptions.PollIntervalSeconds);
+        Assert.Equal(14, workerOptions.CancelLeadTimeSeconds);
         Assert.Equal(new Uri("https://example.social"), mastodonOptions.BaseUrl);
         Assert.Equal("token-123", mastodonOptions.AccessToken);
     }
