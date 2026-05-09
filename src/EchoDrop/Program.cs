@@ -1,13 +1,19 @@
+using EchoDrop.Api;
 using EchoDrop;
 using EchoDrop.Domain.Interfaces;
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
     .ConfigureEchoDropOptions(builder.Configuration)
     .AddEchoDropServices();
 
-var host = builder.Build();
+var app = builder.Build();
 
-await host.Services.GetRequiredService<IScheduledPostRepository>().EnsureSchemaAsync(CancellationToken.None).ConfigureAwait(false);
-await host.RunAsync().ConfigureAwait(false);
+await app.Services.GetRequiredService<IScheduledPostRepository>().EnsureSchemaAsync(CancellationToken.None).ConfigureAwait(false);
+
+app.MapDataUpdateApi();
+
+await app.RunAsync().ConfigureAwait(false);
+
+public partial class Program;

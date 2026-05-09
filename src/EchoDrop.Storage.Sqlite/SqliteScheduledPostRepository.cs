@@ -40,6 +40,60 @@ public sealed class SqliteScheduledPostRepository(IOptions<DatabaseOptions> opti
         }
     }
 
+    public Task UpsertAsync(ScheduledPost post, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(post);
+
+        return UpsertAsync([post], cancellationToken);
+    }
+
+    public async Task UpsertAsync(IReadOnlyList<ScheduledPost> posts, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(posts);
+
+        if (posts.Count == 0)
+        {
+            return;
+        }
+
+        var connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var transaction = (SqliteTransaction)await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                foreach (var post in posts)
+                {
+                    using var command = connection.CreateCommand();
+                    command.Transaction = transaction;
+                    command.CommandText =
+                        """
+                        INSERT INTO ScheduledPosts (Id, Content, ScheduledAtUtc, PublishedAtUtc, ProviderPostId)
+                        VALUES ($id, $content, $scheduledAtUtc, NULL, NULL)
+                        ON CONFLICT(Id) DO UPDATE SET
+                            Content = excluded.Content,
+                            ScheduledAtUtc = excluded.ScheduledAtUtc;
+                        """;
+                    command.Parameters.AddWithValue("$id", post.Id.ToString("D", CultureInfo.InvariantCulture));
+                    command.Parameters.AddWithValue("$content", post.Content);
+                    command.Parameters.AddWithValue("$scheduledAtUtc", post.ScheduledAtUtc.UtcDateTime.ToString("O", CultureInfo.InvariantCulture));
+
+                    await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+                }
+
+                await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                await transaction.DisposeAsync().ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            await connection.DisposeAsync().ConfigureAwait(false);
+        }
+    }
+
     public async Task<IReadOnlyList<ScheduledPost>> GetDuePostsAsync(DateTimeOffset asOfUtc, CancellationToken cancellationToken)
     {
         var connection = await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);

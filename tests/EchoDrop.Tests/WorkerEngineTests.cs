@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using EchoDrop.Configuration;
 using EchoDrop.Domain.Interfaces;
 using EchoDrop.Domain.Models;
@@ -9,6 +10,7 @@ using System.Reflection;
 
 namespace EchoDrop.Tests;
 
+[ExcludeFromCodeCoverage]
 public sealed class WorkerEngineTests
 {
     [Fact]
@@ -101,6 +103,10 @@ public sealed class WorkerEngineTests
         public List<Guid> MarkedPostIds { get; } = [];
 
         public Task EnsureSchemaAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task UpsertAsync(ScheduledPost post, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task UpsertAsync(IReadOnlyList<ScheduledPost> posts, CancellationToken cancellationToken) => Task.CompletedTask;
 
         public Task<IReadOnlyList<ScheduledPost>> GetDuePostsAsync(DateTimeOffset asOfUtc, CancellationToken cancellationToken)
         {

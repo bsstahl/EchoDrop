@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using EchoDrop.Domain.Models;
 using EchoDrop.Domain.Interfaces;
 using EchoDrop.Services;
@@ -5,6 +6,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EchoDrop.Tests;
 
+[ExcludeFromCodeCoverage]
 public sealed class ScheduledPostPublisherTests
 {
     [Fact]
@@ -74,6 +76,10 @@ public sealed class ScheduledPostPublisherTests
         public List<Guid> MarkedPostIds { get; } = [];
 
         public Task EnsureSchemaAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task UpsertAsync(ScheduledPost post, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task UpsertAsync(IReadOnlyList<ScheduledPost> posts, CancellationToken cancellationToken) => Task.CompletedTask;
 
         public Task<IReadOnlyList<ScheduledPost>> GetDuePostsAsync(DateTimeOffset asOfUtc, CancellationToken cancellationToken)
             => Task.FromResult(_duePosts);
